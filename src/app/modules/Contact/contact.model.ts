@@ -1,17 +1,17 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model, Types } from 'mongoose';
 
 const ContactSchema = new Schema(
   {
     userId: {
-      type: String,
+      type: Schema.Types.ObjectId,  // Changed from String
+      ref: 'User',                  // Reference to User model
       required: true,
     },
     providerId: {
-      type: String,
+      type: Schema.Types.ObjectId,  // Changed from String
+      ref: 'User',                  // Reference to User model
       required: true,
     },
-  
-  
     location: {
       type: String,
       required: true,
@@ -21,6 +21,12 @@ const ContactSchema = new Schema(
       required: true,
       maxlength: 1000,
     },
+    status: {
+      type: String,
+      enum: ['pending', 'cancelled', 'accepted','rejected'],
+      default: 'pending',
+      required: true,
+    },
   },
   {
     timestamps: true,
@@ -28,11 +34,6 @@ const ContactSchema = new Schema(
     toObject: { virtuals: true },
   }
 );
-
-// Indexes
-ContactSchema.index({ email: 1 });
-ContactSchema.index({ phone: 1 });
-
 const Contact = model('Contact', ContactSchema);
 
 export default Contact;

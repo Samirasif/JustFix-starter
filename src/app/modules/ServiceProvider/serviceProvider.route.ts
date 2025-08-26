@@ -25,9 +25,18 @@ router.get(
   '/',
   ServiceProviderController.getServiceProviders
 );
+
+router.get('/metrics',auth(), ServiceProviderController.getContactMetrics);
+router.get('/all-contacts', auth(), ServiceProviderController.getUserContacts);
 router.get('/:id',
   ServiceProviderController.getServiceProvidersById
 );
+router.put(
+  '/:id',
+  auth(),
+  ServiceProviderController.acceptContact
+);
+
 
 
 

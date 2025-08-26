@@ -14,6 +14,7 @@ import { Secret } from 'jsonwebtoken';
 
 import mongoose, { Types } from 'mongoose';
 import User from '../User/user.model';
+import Contact from '../Contact/contact.model';
 
 
 const getCategories = async (): Promise<{ name: string; total: number }[]> => {
@@ -111,6 +112,59 @@ const filterProviders = async (filters: any) => {
   const result = await User.find(query);
   return result;
 };
+const getContactMetrics = async (userId: string) => {
+  if (!userId) throw new Error('User ID is required to fetch metrics');
+
+  const baseFilter = { providerId:userId };
+
+  const [ pending, accepted, cancelled, rejected] = await Promise.all([
+    
+    Contact.countDocuments({ ...baseFilter, status: 'pending' }),
+    Contact.countDocuments({ ...baseFilter, status: 'accepted' }),
+    Contact.countDocuments({ ...baseFilter, status: 'cancelled' }),
+    Contact.countDocuments({ ...baseFilter, status: 'rejected' }),
+  ]);
+
+  const metrics = [
+    
+    { title: 'Pending', value: pending },
+    { title: 'Accepted', value: accepted },
+    { title: 'Cancelled', value: cancelled },
+    { title: 'Rejected', value: rejected },
+  ];
+
+  return metrics;
+};
+const getUserContacts = async (userId: string) => {
+  if (!userId) throw new Error('User ID is required');
+
+  const contacts = await Contact.find({ providerId:userId })
+    .populate('providerId userId', 'firstName lastName email phone profession location') // if ref used
+    .sort({ createdAt: -1 });
+
+  return contacts;
+};
+const acceptContact = async (contactId: string, userId: string) => {
+  const contact = await Contact.findOne({ _id: contactId, providerId: userId });
+
+  if (!contact) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Contact not found');
+  }
+
+  if (contact.status !== 'pending') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Only pending contacts can be accepted');
+  }
+
+  // ✅ Update the status to "accepted"
+  await Contact.findOneAndUpdate(
+    { _id: contactId, providerId: userId },
+    { $set: { status: 'accepted' } },
+    { new: true }
+  );
+
+  return { _id: contactId };
+};
+
 
     export const ServiceProviderServices = {
         getCategories,
@@ -118,5 +172,8 @@ const filterProviders = async (filters: any) => {
         getServiceProviderById,
         getProvidersByCategory,
         searchProviders,
-        filterProviders
+        filterProviders,
+        getUserContacts,
+        getContactMetrics,
+        acceptContact
     };

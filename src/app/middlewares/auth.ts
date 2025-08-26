@@ -34,24 +34,16 @@ const auth = (...roles: string[]) => {
         config.jwt.access_token_secret as Secret
       );
 
-      if (!verifiedUser?.phone) {
+      if (!verifiedUser?.email) {
         throw new ApiError(httpStatus.UNAUTHORIZED, 'You are not authorized!');
       }
 
-      const user = await User.findOne({ phone: verifiedUser.phone });
+      const user = await User.findOne({ email: verifiedUser.email });
 
       if (!user) {
         throw new ApiError(httpStatus.NOT_FOUND, 'User not found!');
       }
 
-
-      // Optional user status checks
-      if (user.isDeleted) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'This user is deleted!');
-      }
-      if (user.userStatus === 'BLOCKED') {
-        throw new ApiError(httpStatus.FORBIDDEN, 'Your account is blocked!');
-      }
 
       
 
@@ -70,38 +62,6 @@ const auth = (...roles: string[]) => {
   };
 };
 
-export const checkOTP = async (
-  req: Request & { user?: any },
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const token = extractToken(req.headers.authorization);
 
-    if (!token) {
-      throw new ApiError(httpStatus.UNAUTHORIZED, 'You are not authorized!');
-    }
-
-    const verifiedUser = jwtHelpers.verifyToken(
-      token,
-      config.jwt.jwt_secret as Secret
-    );
-
-    if (!verifiedUser?.email) {
-      throw new ApiError(httpStatus.UNAUTHORIZED, 'You are not authorized!');
-    }
-
-    const user = await User.findById(verifiedUser.id);
-
-    if (!user) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'User not found!');
-    }
-
-    req.user = verifiedUser as JwtPayload;
-    next();
-  } catch (err) {
-    next(err);
-  }
-};
 
 export default auth;

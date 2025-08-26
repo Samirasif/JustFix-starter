@@ -47,6 +47,59 @@ const createContact = async (payload: {
   return contact;
 };
 
+const getContactMetrics = async (userId: string) => {
+  if (!userId) throw new Error('User ID is required to fetch metrics');
+
+  const baseFilter = { userId };
+
+  const [ pending, accepted, cancelled, rejected] = await Promise.all([
+    
+    Contact.countDocuments({ ...baseFilter, status: 'pending' }),
+    Contact.countDocuments({ ...baseFilter, status: 'accepted' }),
+    Contact.countDocuments({ ...baseFilter, status: 'cancelled' }),
+    Contact.countDocuments({ ...baseFilter, status: 'rejected' }),
+  ]);
+
+  const metrics = [
+    
+    { title: 'Pending', value: pending },
+    { title: 'Accepted', value: accepted },
+    { title: 'Cancelled', value: cancelled },
+    { title: 'Rejected', value: rejected },
+  ];
+
+  return metrics;
+};
+const getUserContacts = async (userId: string) => {
+  if (!userId) throw new Error('User ID is required');
+
+  const contacts = await Contact.find({ userId })
+    .populate('providerId userId', 'firstName lastName email phone profession location') // if ref used
+    .sort({ createdAt: -1 });
+
+  return contacts;
+};
+const deleteContactIfPending = async (contactId: string, userId: string) => {
+  const contact = await Contact.findOne({ _id: contactId, userId });
+  console.log(contactId,userId);
+
+  if (!contact) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Contact not found');
+  }
+
+  if (contact.status !== 'pending') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Only pending contacts can be deleted');
+  }
+
+  await Contact.findByIdAndDelete(contactId);
+  return { _id: contactId };
+};
+
+
 export const ContactService = {
   createContact,
+  getContactMetrics,
+  getUserContacts,
+  deleteContactIfPending,
+  
 };

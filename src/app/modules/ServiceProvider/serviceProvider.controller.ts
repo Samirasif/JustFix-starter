@@ -72,6 +72,43 @@ const filterProviders = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getContactMetrics = catchAsync(async (req: Request, res: Response) => {
+  const userId= req.user._id;
+  const result = await ServiceProviderServices.getContactMetrics(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Contact metrics fetched successfully',
+    data: result,
+  });
+});
+const acceptContact = async (req: Request, res: Response) => {
+  const  contactId  = req.params.id;
+  console.log("delete controller",contactId)
+  const userId = req.user?._id; // assuming you attach user in auth middleware
+
+  const result = await ServiceProviderServices.acceptContact(contactId, userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Contact accepted successfully (if it was pending)',
+    data: result,
+  });
+};
+const getUserContacts = catchAsync(async (req, res) => {
+  const userId = req?.user?.id;
+
+  const result = await ServiceProviderServices.getUserContacts(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'User contacts retrieved successfully',
+    data: result,
+  });
+});
 
 export const ServiceProviderController = {
 
@@ -81,7 +118,10 @@ export const ServiceProviderController = {
   getServiceProvidersById,
   getProvidersByCategory,
   searchProviders,
-  filterProviders
+  filterProviders,
+  getContactMetrics,
+  getUserContacts,
+  acceptContact
   
 };
 
